@@ -1,0 +1,293 @@
+{
+  "assetModels": [
+    {
+      "assetModelExternalId": "eID_Enterprise_Unit",
+      "assetModelName": "Enterprise_Unit",
+      "assetModelProperties": [],
+      "assetModelCompositeModels": [],
+      "assetModelHierarchies": [
+        {
+          "externalId": "eID_Enterprise-Region",
+          "name": "Enterprise-Region",
+          "childAssetModelExternalId": "eID_Regional_Unit"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "assetModelExternalId": "eID_General_Cell",
+      "assetModelName": "General_Cell",
+      "assetModelProperties": [
+        {
+          "externalId": "eID_Seq_Duration",
+          "name": "Seq_Duration",
+          "dataType": "DOUBLE",
+          "type": {
+            "metric": {
+              "expression": "sum(var4)",
+              "variables": [
+                {
+                  "name": "var4",
+                  "value": {
+                    "propertyExternalId": "eID_Seq_Timer"
+                  }
+                }
+              ],
+              "window": {
+                "tumbling": {
+                  "interval": "5m"
+                }
+              }
+            }
+          }
+        },
+        {
+          "externalId": "eID_Input_Buffer",
+          "name": "Input_Buffer",
+          "dataType": "INTEGER",
+          "type": {
+            "measurement": {}
+          }
+        },
+        {
+          "externalId": "eID_Seq_Timer",
+          "name": "Seq_Timer",
+          "dataType": "INTEGER",
+          "type": {
+            "measurement": {}
+          }
+        },
+        {
+          "externalId": "eID_Output_Buffer",
+          "name": "Output_Buffer",
+          "dataType": "INTEGER",
+          "type": {
+            "measurement": {}
+          }
+        },
+        {
+          "externalId": "eID_Seq_Running",
+          "name": "Seq_Running",
+          "dataType": "BOOLEAN",
+          "type": {
+            "measurement": {}
+          }
+        },
+        {
+          "externalId": "eID_Output_5m",
+          "name": "Output_5m",
+          "dataType": "DOUBLE",
+          "type": {
+            "metric": {
+              "expression": "sum(var4)",
+              "variables": [
+                {
+                  "name": "var4",
+                  "value": {
+                    "propertyExternalId": "eID_Output_Buffer"
+                  }
+                }
+              ],
+              "window": {
+                "tumbling": {
+                  "interval": "5m"
+                }
+              }
+            }
+          }
+        },
+        {
+          "externalId": "eID_Current_Step",
+          "name": "Current_Step",
+          "dataType": "INTEGER",
+          "type": {
+            "measurement": {}
+          }
+        },
+        {
+          "externalId": "eID_Product_ID",
+          "name": "Product_ID",
+          "dataType": "STRING",
+          "type": {
+            "measurement": {}
+          }
+        },
+        {
+          "externalId": "eID_VIN",
+          "name": "VIN",
+          "dataType": "STRING",
+          "type": {
+            "measurement": {}
+          }
+        }
+      ],
+      "assetModelCompositeModels": [],
+      "assetModelHierarchies": [],
+      "tags": []
+    },
+    {
+      "assetModelExternalId": "eID_Production_Unit",
+      "assetModelName": "Production_Unit",
+      "assetModelProperties": [
+        {
+          "externalId": "eID_Unit_Prod_time",
+          "name": "Unit_Prod_time",
+          "dataType": "DOUBLE",
+          "type": {
+            "metric": {
+              "expression": "sum(var4)",
+              "variables": [
+                {
+                  "name": "var4",
+                  "value": {
+                    "propertyExternalId": "eID_Seq_Duration",
+                    "hierarchyExternalId": "eID_Production-Cell"
+                  }
+                }
+              ],
+              "window": {
+                "tumbling": {
+                  "interval": "5m"
+                }
+              }
+            }
+          }
+        },
+        {
+          "externalId": "eID_Unit_Count_5m",
+          "name": "Unit_Count_5m",
+          "dataType": "DOUBLE",
+          "type": {
+            "metric": {
+              "expression": "sum(var4)",
+              "variables": [
+                {
+                  "name": "var4",
+                  "value": {
+                    "propertyExternalId": "eID_Output_5m",
+                    "hierarchyExternalId": "eID_Production-Cell"
+                  }
+                }
+              ],
+              "window": {
+                "tumbling": {
+                  "interval": "5m"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "assetModelCompositeModels": [],
+      "assetModelHierarchies": [
+        {
+          "externalId": "eID_Production-Cell",
+          "name": "Production-Cell",
+          "childAssetModelExternalId": "eID_General_Cell"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "assetModelExternalId": "eID_Regional_Unit",
+      "assetModelName": "Regional_Unit",
+      "assetModelProperties": [],
+      "assetModelCompositeModels": [],
+      "assetModelHierarchies": [
+        {
+          "externalId": "eID_Region-Production",
+          "name": "Region-Production",
+          "childAssetModelExternalId": "eID_Production_Unit"
+        }
+      ],
+      "tags": []
+    }
+  ],
+  "assets": [
+    {
+      "assetExternalId": "eID_Press_Shop_Cell",
+      "assetName": "Press Shop Cell ",
+      "assetModelExternalId": "eID_General_Cell"
+    },
+    {
+      "assetExternalId": "eID_Body_Shop_Cell",
+      "assetName": "Body Shop Cell",
+      "assetModelExternalId": "eID_General_Cell"
+    },
+    {
+      "assetExternalId": "eID_Paint_Shop_Cell",
+      "assetName": "Paint Shop Cell",
+      "assetModelExternalId": "eID_General_Cell"
+    },
+    {
+      "assetExternalId": "eID_Plastic_Molding_Cell",
+      "assetName": "Plastic Molding Cell",
+      "assetModelExternalId": "eID_General_Cell"
+    },
+    {
+      "assetExternalId": "eID_Tooling_and_Dye_Cell",
+      "assetName": "Tooling and Dye Cell",
+      "assetModelExternalId": "eID_General_Cell"
+    },
+    {
+      "assetExternalId": "eID_Forming_Unit",
+      "assetName": "Forming Unit",
+      "assetModelExternalId": "eID_Production_Unit",
+      "assetHierarchies": [
+        {
+          "externalId": "eID_Production-Cell",
+          "childAssetExternalId": "eID_Press_Shop_Cell"
+        },
+        {
+          "externalId": "eID_Production-Cell",
+          "childAssetExternalId": "eID_Body_Shop_Cell"
+        },
+        {
+          "externalId": "eID_Production-Cell",
+          "childAssetExternalId": "eID_Paint_Shop_Cell"
+        }
+      ]
+    },
+    {
+      "assetExternalId": "eID_Component_Fabrication_Unit",
+      "assetName": "Component Fabrication Unit",
+      "assetModelExternalId": "eID_Production_Unit",
+      "assetHierarchies": [
+        {
+          "externalId": "eID_Production-Cell",
+          "childAssetExternalId": "eID_Plastic_Molding_Cell"
+        },
+        {
+          "externalId": "eID_Production-Cell",
+          "childAssetExternalId": "eID_Tooling_and_Dye_Cell"
+        }
+      ]
+    },
+    {
+      "assetExternalId": "eID_Reinvent_Car_Factory",
+      "assetName": "Reinvent_Car_Factory",
+      "assetModelExternalId": "eID_Enterprise_Unit",
+      "assetHierarchies": [
+        {
+          "externalId": "eID_Enterprise-Region",
+          "childAssetExternalId": "eID_Las_Vegas_Facility"
+        }
+      ]
+    },
+    {
+      "assetExternalId": "eID_Las_Vegas_Facility",
+      "assetName": "Las Vegas Facility",
+      "assetModelExternalId": "eID_Regional_Unit",
+      "assetHierarchies": [
+        {
+          "externalId": "eID_Region-Production",
+          "childAssetExternalId": "eID_Forming_Unit"
+        },
+        {
+          "externalId": "eID_Region-Production",
+          "childAssetExternalId": "eID_Component_Fabrication_Unit"
+        }
+      ]
+    }
+  ]
+}

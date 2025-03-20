@@ -1,0 +1,37 @@
+{
+  "RecipeFormatVersion": "2020-01-25",
+  "ComponentName": "custom.aws.sfc.runtime.with.config",
+  "ComponentVersion": "1.0.0",
+  "ComponentType": "aws.greengrass.generic",
+  "ComponentDescription": "Starts SFC with inline base64-encoded config.",
+  "ComponentPublisher": "AWS",
+  "ComponentConfiguration": {
+    "DefaultConfiguration": {
+      "sfcInstallerBase64Encoded": "<FilledUsingDeployment>",
+      "sfcConfigZipBase64Encoded": "<FilledUsingDeployment>"
+    }
+  },
+  "ComponentDependencies": {},
+  "Manifests": [
+    {
+      "Platform": {
+        "os": "linux"
+      },
+      "Lifecycle": {
+        "Setenv": {
+          "SFC_DEPLOYMENT_DIR": "{artifacts:path}"
+        },
+        "Install": {
+          "RequiresPrivilege": true,
+          "Script": "cd {artifacts:path}\necho '{configuration:/sfcInstallerBase64Encoded}' | base64 -d > installer.sh\nchmod +x installer.sh\n{artifacts:path}/installer.sh\necho '{configuration:/sfcConfigZipBase64Encoded}' | base64 -d > sfc-conf.zip\nunzip sfc-conf.zip"
+        },
+        "Run": {
+          "RequiresPrivilege": true,
+          "Script": "cd {artifacts:path}\nsfc-main/bin/sfc-main -config sfc_config_generated.json"
+        }
+      },
+      "Artifacts": []
+    }
+  ],
+  "Lifecycle": {}
+}

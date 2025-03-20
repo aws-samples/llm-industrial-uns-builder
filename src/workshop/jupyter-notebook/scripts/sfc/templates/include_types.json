@@ -1,0 +1,24 @@
+{
+    "Targets": {
+        "DEBUG-TARGET": {
+            "JarFiles": [
+                "${SFC_DEPLOYMENT_DIR}/debug-target/lib"
+            ],
+            "FactoryClassName": "com.amazonaws.sfc.debugtarget.DebugTargetWriter"
+        },
+        "AWS-SITEWISE": {
+            "JarFiles": [
+                "${SFC_DEPLOYMENT_DIR}/aws-sitewise-target/lib"
+            ],
+            "FactoryClassName": "com.amazonaws.sfc.awssitewise.AwsSiteWiseTargetWriter"
+        }
+    },
+    "Adapters": {
+        "S7": {
+            "JarFiles": [
+                "${SFC_DEPLOYMENT_DIR}/s7/lib"
+            ],
+            "FactoryClassName": "com.amazonaws.sfc.s7.S7Adapter"
+        }
+    }
+}

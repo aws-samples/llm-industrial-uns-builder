@@ -1,0 +1,172 @@
+{
+    "Active": true,
+    "Assets": [
+        {
+            "AssetExternalId": "eID_Press_Shop_Cell",
+            "Properties": [
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_Seq_No\"",
+                    "PropertyName": "Current_Step"
+                },
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_Seq_time\"",
+                    "PropertyName": "Seq_Timer"
+                },
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_VIN\"",
+                    "PropertyName": "VIN"
+                },
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_ProductID\"",
+                    "PropertyName": "Product_ID"
+                },
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_Input_Buffer\"",
+                    "PropertyName": "Input_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_Output_Buffer\"",
+                    "PropertyName": "Output_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"01_PRSH_X01\".values.\"13_Seq_Start\"",
+                    "PropertyName": "Seq_Running"
+                }
+            ]
+        },
+        {
+            "AssetExternalId": "eID_Paint_Shop_Cell",
+            "Properties": [
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_Seq_No\"",
+                    "PropertyName": "Current_Step"
+                },
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_Seq_time\"",
+                    "PropertyName": "Seq_Timer"
+                },
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_VIN\"",
+                    "PropertyName": "VIN"
+                },
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_ProductID\"",
+                    "PropertyName": "Product_ID"
+                },
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_Input_Buffer\"",
+                    "PropertyName": "Input_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_Output_Buffer\"",
+                    "PropertyName": "Output_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"03_PSH_X01\".values.\"13_Seq_Start\"",
+                    "PropertyName": "Seq_Running"
+                }
+            ]
+        },
+        {
+            "AssetExternalId": "eID_Body_Shop_Cell",
+            "Properties": [
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_Seq_No\"",
+                    "PropertyName": "Current_Step"
+                },
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_Seq_time\"",
+                    "PropertyName": "Seq_Timer"
+                },
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_VIN\"",
+                    "PropertyName": "VIN"
+                },
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_ProductID\"",
+                    "PropertyName": "Product_ID"
+                },
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_Input_Buffer\"",
+                    "PropertyName": "Input_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_Output_Buffer\"",
+                    "PropertyName": "Output_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"02_BSH_X01\".values.\"13_Seq_Start\"",
+                    "PropertyName": "Seq_Running"
+                }
+            ]
+        },
+        {
+            "AssetExternalId": "eID_Tooling_and_Dye_Cell",
+            "Properties": [
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_Seq_No\"",
+                    "PropertyName": "Current_Step"
+                },
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_Seq_time\"",
+                    "PropertyName": "Seq_Timer"
+                },
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_VIN\"",
+                    "PropertyName": "VIN"
+                },
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_ProductID\"",
+                    "PropertyName": "Product_ID"
+                },
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_Input_Buffer\"",
+                    "PropertyName": "Input_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_Output_Buffer\"",
+                    "PropertyName": "Output_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"05_TLD_X02\".values.\"13_Seq_Start\"",
+                    "PropertyName": "Seq_Running"
+                }
+            ]
+        },
+        {
+            "AssetExternalId": "eID_Plastic_Molding_Cell",
+            "Properties": [
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_Seq_No\"",
+                    "PropertyName": "Current_Step"
+                },
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_Seq_time\"",
+                    "PropertyName": "Seq_Timer"
+                },
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_VIN\"",
+                    "PropertyName": "VIN"
+                },
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_ProductID\"",
+                    "PropertyName": "Product_ID"
+                },
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_Input_Buffer\"",
+                    "PropertyName": "Input_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_Output_Buffer\"",
+                    "PropertyName": "Output_Buffer"
+                },
+                {
+                    "DataPath": "sources.\"04_PLS_X02\".values.\"13_Seq_Start\"",
+                    "PropertyName": "Seq_Running"
+                }
+            ]
+        }
+    ],
+    "Region": "us-west-2",
+    "TargetType": "AWS-SITEWISE"
+}

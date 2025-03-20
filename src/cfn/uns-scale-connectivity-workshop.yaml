@@ -1,0 +1,818 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Stage:
+    Type: String
+    AllowedValues:
+      - production
+      - testing
+    Default: production
+  LatestAL2AmiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /aws/service/ami-windows-latest/Windows_Server-2022-English-Full-SQL_2022_Enterprise
+  GenerateRandomWindowsPassword:
+    Description: If yes a SecretsManager Secret will store a random password and the Windows instance will be updated with this password
+    Default: 1
+    Type: String
+    AllowedValues:
+      - 0
+      - 1
+
+Conditions:
+  GeneratePassword: !Equals
+    - !Ref GenerateRandomWindowsPassword
+    - 1
+
+Mappings:
+  AWSRegion2AZ:
+    us-west-2:
+      AvailabilityZoneId: "usw2-az1"
+    us-east-1:
+      AvailabilityZoneId: "use1-az6"
+    eu-west-1:
+     AvailabilityZoneId: "euw1-az3"
+    eu-central-1:
+      AvailabilityZoneId: "euc1-az3"
+
+
+
+Resources:
+
+  ###
+  # VPC settings
+  ###
+
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W60
+            reason: flow logging not required
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: 'Name'
+          Value: 'Industrial Network'
+
+  PublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W33
+            reason: Public subnet requires public IP for AWS IoT Sitewise API access requirements.
+    Properties:
+      AvailabilityZoneId: !FindInMap [AWSRegion2AZ, !Ref "AWS::Region", AvailabilityZoneId]
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+
+  VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTablePublic:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+
+  RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTablePublic
+
+  RouteToInternet:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTablePublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+    DependsOn: VPCGatewayAttachment
+
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W40
+            reason: Egress rules are open by design to allow outbound traffic.
+          - id: W5
+            reason: Security group egress requires open CIDR for TIA server connectivity needs.
+          - id: W9
+            reason: Ingress CIDR broader than /32 is required for SFC target and sitewise needs.
+          - id: W36
+            reason: Security group rules are defined by automation and controlled separately.
+    Properties:
+      GroupDescription: 'related configs for the TIA server, PLCSim as well as the gateway'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 102
+          ToPort: 102
+          CidrIp: '10.0.1.0/24'
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+
+#  CloudformationInterfaceEndpoint:
+#    Type: 'AWS::EC2::VPCEndpoint'
+#    Properties:
+#      VpcEndpointType: 'Interface'
+#      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.cloudformation'
+#      VpcId: !Ref VPC
+#      PrivateDnsEnabled: true
+#      SubnetIds:
+#        - !Ref PublicSubnet
+#      SecurityGroupIds:
+#        - !Ref SecurityGroup
+#        - !GetAtt VPC.DefaultSecurityGroup
+#
+#  SSMInterfaceEndpoint:
+#    Type: 'AWS::EC2::VPCEndpoint'
+#    Properties:
+#      VpcEndpointType: 'Interface'
+#      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssm'
+#      VpcId: !Ref VPC
+#      PrivateDnsEnabled: true
+#      SubnetIds:
+#        - !Ref PublicSubnet
+#      SecurityGroupIds:
+#        - !Ref SecurityGroup
+#        - !GetAtt VPC.DefaultSecurityGroup
+#
+#  SSMMessagesInterfaceEndpoint:
+#    Type: 'AWS::EC2::VPCEndpoint'
+#    Properties:
+#      VpcEndpointType: 'Interface'
+#      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssmmessages'
+#      VpcId: !Ref VPC
+#      PrivateDnsEnabled: true
+#      SubnetIds:
+#        - !Ref PublicSubnet
+#      SecurityGroupIds:
+#        - !Ref SecurityGroup
+#        - !GetAtt VPC.DefaultSecurityGroup
+
+  ###
+  # get ami via web hook
+  ###
+ 
+
+  ###
+  # S3 Bucket for sitewise import/export
+  ###
+
+  SiteWiseImportBucket:
+    Type: AWS::S3::Bucket
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W51
+            reason: S3 bucket policy is managed separately.
+          - id: W35
+            reason: Access logging is managed outside of CloudFormation.
+          - id: W41
+            reason: Encryption is handled via default AWS encryption settings.         
+    Properties:
+      BucketName:
+        Fn::Join:
+          - ''
+          - - 'reinvent-'
+            - Ref: AWS::StackName
+            - '-'
+            - Ref: AWS::AccountId
+            - '-'
+            - Ref: AWS::Region
+        
+      AccessControl: "Private"
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  SiteWiseMetadataBulkImportRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: IAM roles permissions to be able to use existing bucket in the customer account.
+          - id: W28
+            reason: Explicit resource names are necessary for operational consistency in code.
+    Properties:
+      RoleName: !Sub metadata_import_role_workshop-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "iotsitewise.amazonaws.com"
+            - "iottwinmaker.amazonaws.com"
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub metadata_import_policy-${AWS::StackName}
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+#                  - "iotsitewise:*"
+#                  - "iottwinmaker:*"
+                  - 'iottwinmaker:GetMetadataTransferJob'
+                  - 'iottwinmaker:CreateMetadataTransferJob'
+#                  - "s3:*"
+#                  - "s3-object-lambda:*"
+                Resource: '*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSIoTSiteWiseFullAccess
+
+  SiteWiseDataBulkImportRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: Explicit resource names are necessary for operational consistency in code.
+    Properties:
+      RoleName: !Sub data_import_role_workshop-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "iotsitewise.amazonaws.com"
+            - "monitor.iotsitewise.amazonaws.com"
+          Action:
+          - sts:AssumeRole
+#      Policies:
+#        - PolicyName: !Sub data_import_policy-${AWS::StackName}
+#          PolicyDocument:
+#            Version: "2012-10-17"
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - "s3:*"
+#                  - "s3-object-lambda:*"
+#                  - "iotsitewise:*"
+#                Resource: '*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSIoTSiteWiseFullAccess
+
+    ### Empty S3 bucket resources ###
+  EmptyS3BucketCustom:
+    Type: Custom::EmptyS3BucketCustom
+    Properties:
+      ServiceToken: !GetAtt EmptyS3BucketLambdaFunction.Arn
+      S3Bucket: !Ref SiteWiseImportBucket
+      ServiceTimeout: 180
+
+  EmptyS3BucketLambdaRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: Role requires full access to empty the bucket
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub EmptyS3BucketInlinePolicy-${AWS::Region}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:DeleteObject
+                Resource: '*'
+
+  EmptyS3BucketLambdaFunction:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: EmptyS3BucketLambdaRole has the AWSLambdaBasicExecutionRole managed policy attached, allowing writing to CloudWatch logs
+          - id: W89
+            reason: Bootstrap function does not need the scaffolding of a VPC or provisioned concurrency
+          - id: W92
+            reason: Bootstrap function does not need provisioned concurrency
+    Properties:
+      Description: Empty S3 bucket CloudFormation custom resource
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - EmptyS3BucketLambdaRole
+          - Arn
+      Runtime: python3.12
+      MemorySize: 1024
+      Timeout: 400
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import logging
+
+          logger = logging.getLogger(__name__)
+          logger.setLevel(logging.INFO)
+
+          def lambda_handler(event, context):
+              logger.info('event: %s', event)
+              logger.info('context: %s', context)
+
+              if event['RequestType'] == 'Delete':
+                  try:
+                      BucketName = (event['ResourceProperties']['S3Bucket'])
+                      s3 = boto3.resource('s3')
+                      logger.info('S3 Object initialized')
+                      bucket = s3.Bucket(BucketName)
+                      logger.info('deleting all objects from S3 bucket: %s', BucketName)
+                      bucket.objects.all().delete()
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason=f'S3 bucket emptied: {BucketName}')
+                  except Exception as e:
+                      logger.error(e, exc_info=True)
+                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+              else:
+                  logger.info('no action for RequestType: %s', event['RequestType'])
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
+
+  EmptyS3BucketLambdaLogGroup:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: KMS Key not required for encrypting this non sensitive data
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${EmptyS3BucketLambdaFunction}
+      RetentionInDays: 3
+
+
+  ###
+  # secret to generate new windows password
+  ###
+
+  LocalAdminPassword:
+    Type: AWS::SecretsManager::Secret
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W77
+            reason: Secrets Manager key is handled through default settings.
+    Properties:
+      GenerateSecretString:
+        SecretStringTemplate: '{ "Username": "Administrator" }'
+        GenerateStringKey: Password
+        PasswordLength: 16
+        ExcludeCharacters: '"@#$%^&*()_+{}:<>?`~[]/=|'
+
+
+  ###
+  # Instance settings
+  ###
+
+  PLCTIAInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: c5.12xlarge
+      #ImageId: !FindInMap [AWSRegion2AZ, !Ref "AWS::Region", AMI]
+      ImageId: !Ref LatestAL2AmiId
+      IamInstanceProfile: !Ref EC2SSMInstanceProfile
+      NetworkInterfaces:
+        - SubnetId: !Ref PublicSubnet
+          PrivateIpAddress: 10.0.1.100
+          AssociatePublicIpAddress: true
+          DeleteOnTermination: true
+          DeviceIndex: 0
+          GroupSet:
+          - !GetAtt VPC.DefaultSecurityGroup
+          - !Ref SecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+           <powershell>
+
+            # Enable script logging
+            Start-Transcript -Path C:\Windows\Temp\userdata.log -Append
+            
+            # Download and install Python silently
+            $pythonVersion = "3.12.2"
+            $pythonInstaller = "python-$pythonVersion-amd64.exe"
+            $downloadUrl = "https://www.python.org/ftp/python/$pythonVersion/$pythonInstaller"
+            $installDir = "C:\Python$pythonVersion"
+            $installerPath = "$env:TEMP\$pythonInstaller"
+
+            Write-Host "Downloading Python $pythonVersion..."
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+
+            Write-Host "Installing Python..."
+            Start-Process -FilePath $installerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 TargetDir=$installDir" -Wait -NoNewWindow
+
+            # Add Python to system PATH manually (if needed)
+            $pythonExePath = "$installDir\python.exe"
+            $envPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+            if ($envPath -notlike "*$installDir*") {
+                Write-Host "Adding Python to system PATH..."
+                $newPath = "$envPath;$installDir"
+                [System.Environment]::SetEnvironmentVariable("Path", $newPath, [System.EnvironmentVariableTarget]::Machine)
+            }
+
+            # Refresh Environment Variables
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+
+            # Python installation using full path 
+            Write-Host "Verifying Python installation..."
+            if (Test-Path $pythonExePath) {
+                & $pythonExePath --version
+                python -m pip install urllib3 untangle jsonpickle openpyxl click boto3 pythonnet ec2_metadata pywinauto anytree
+                Write-Host "Python installed successfully!"
+            } else {
+                Write-Host "Python installation failed."
+            }
+
+            # Clean up installer
+            Remove-Item -Path $installerPath -Force
+            Write-Host "Python installation complete!"
+
+            # let python download the files
+            $url = "https://ws-assets-prod-iad-r-pdx-f3b3f9f1a7d6a3d0.s3.us-west-2.amazonaws.com/7919c848-eb70-4278-96ba-06fd1e038fb6/update_files.py"
+            $outputPath = "C:\Users\Administrator\Documents\update_files.py"
+            Invoke-WebRequest -Uri $url -OutFile $outputPath
+            # Check if Python is installed and in the system PATH
+            if (Get-Command python -ErrorAction SilentlyContinue) {
+                python -m pip install urllib3 untangle jsonpickle openpyxl click boto3 pythonnet ec2_metadata pywinauto anytree
+                py $outputPath
+            }
+            else {
+                Write-Host "Python is not installed or not in the system PATH."
+            }
+
+            # Extract zip files
+            if (!(Test-Path "C:\Users\Administrator\Documents\jupyter-notebook\scripts")) {
+              Expand-Archive -LiteralPath 'C:\Users\Administrator\Documents\jupyter-notebook\scripts.zip' -DestinationPath C:\Users\Administrator\Documents\jupyter-notebook
+            }
+            if (!(Test-Path "C:\Users\Administrator\Documents\Automation\reInventAutoWorkshop_V19")) {
+              Expand-Archive -LiteralPath 'C:\Users\Administrator\Documents\Automation\reInventAutoWorkshop_V19.zip' -DestinationPath C:\Users\Administrator\Documents\Automation
+            }
+            if (!(Test-Path "C:\Users\Administrator\Documents\PLC_Archive")) {
+              Expand-Archive -LiteralPath 'C:\Users\Administrator\Documents\PLC_Archive.zip' -DestinationPath C:\Users\Administrator\Documents
+            }
+            
+            # install jdk
+            if (!(Test-Path "C:\Program Files\Amazon Corretto")) {
+              $jdkurl = "https://corretto.aws/downloads/latest/amazon-corretto-11-x64-windows-jdk.msi"
+              $jdkoutputPath = "C:\Users\Administrator\Downloads\amazon-corretto-11-x64-windows-jdk.msi"
+              Invoke-WebRequest -Uri $jdkurl -OutFile $jdkoutputPath
+              msiexec /i $jdkoutputPath /qn /l*v "C:\Users\Administrator\Downloads\Amazon_Corretto_install.log" /norestart ALLUSERS=2
+            }
+
+            # Download and install Visual Studio Code silently
+            $vscodeInstaller = "C:\Windows\Temp\vscode-installer.exe"
+            Invoke-WebRequest -Uri "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user" -OutFile $vscodeInstaller
+            Start-Process -FilePath $vscodeInstaller -ArgumentList "/silent /mergetasks=!runcode" -Wait
+            Remove-Item -Path $vscodeInstaller -Force
+            # Verify VS Code installation
+            $vsCodePath = "C:\Users\Administrator\AppData\Local\Programs\Microsoft VS Code\Code.exe"
+            if (Test-Path $vsCodePath) {
+                Write-Output "Visual Studio Code installed successfully."
+            } else {
+                Write-Output "VS Code installation failed."
+            }
+
+            # reset password to the password in the secrets managers secret
+            if (${GenerateRandomWindowsPassword}) {
+              $password = ((Get-SECSecretValue -SecretId '${LocalAdminPassword}').SecretString | ConvertFrom-Json).Password
+              net.exe user Administrator $password
+              $RegistryPath = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+              Set-ItemProperty $RegistryPath 'AutoAdminLogon' -Value "1" -Type String 
+              Set-ItemProperty $RegistryPath 'DefaultUsername' -Value "Administrator" -type String
+              Set-ItemProperty $RegistryPath 'DefaultPassword' -Value "$password" -type String
+            }
+
+            # End script logging
+            Stop-Transcript
+          
+           </powershell>
+           <persist>true</persist>
+      Tags:
+      - Key: Name
+        Value: 'PLCSim + TIA Portal'
+
+
+  # TODO: Use that Linux Instance for future extension of the workshop,
+  #       to show AWS IoT Greengrass deployments of SFC.
+
+  # SFCInstance:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     InstanceType: c5.xlarge
+  #     ImageId: !Ref LatestAL2AmiId
+  #     IamInstanceProfile: !Ref EC2SSMInstanceProfile
+  #     BlockDeviceMappings:
+  #       - DeviceName: /dev/xvda
+  #         Ebs:
+  #           VolumeType: gp2
+  #           Encrypted: true
+  #           VolumeSize: 150
+  #           DeleteOnTermination: true
+  #     NetworkInterfaces:
+  #       - SubnetId: !Ref PublicSubnet
+  #         AssociatePublicIpAddress: true
+  #         DeleteOnTermination: true
+  #         DeviceIndex: 0
+  #         GroupSet:
+  #         - !GetAtt VPC.DefaultSecurityGroup
+  #         - !Ref SecurityGroup
+  #     UserData:
+  #       Fn::Base64: |
+  #         #!/bin/bash
+  #         yum update -y
+  #         yum -y install java-devel git jq telnet
+  #     Tags:
+  #     - Key: Name
+  #       Value: 'SFC + Greengrass GW'
+
+  PLCTIAInstanceEth1:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      PrivateIpAddresses:
+        - PrivateIpAddress: 10.0.1.201
+          Primary: true
+        - PrivateIpAddress: 10.0.1.101
+          Primary: false
+      GroupSet:
+      - !GetAtt VPC.DefaultSecurityGroup
+      - !Ref SecurityGroup
+
+      Tags:
+      - Key: Name
+        Value: 'eth1 for PLCSim'
+
+  PLCTIAInstanceEth1Attachment:
+    Type: 'AWS::EC2::NetworkInterfaceAttachment'
+    Properties:
+      DeleteOnTermination: true
+      DeviceIndex: 1
+      NetworkInterfaceId: !Ref PLCTIAInstanceEth1
+      InstanceId: !Ref PLCTIAInstance
+    DependsOn: PLCTIAInstance
+
+  PLCTIAInstanceEth2:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      PrivateIpAddresses:
+        - PrivateIpAddress: 10.0.1.202
+          Primary: true
+        - PrivateIpAddress: 10.0.1.102
+          Primary: false
+      GroupSet:
+      - !GetAtt VPC.DefaultSecurityGroup
+      - !Ref SecurityGroup
+
+      Tags:
+      - Key: Name
+        Value: 'eth2 for PLCSim'
+
+  PLCTIAInstanceEth2Attachment:
+    Type: 'AWS::EC2::NetworkInterfaceAttachment'
+    Properties:
+      DeleteOnTermination: true
+      DeviceIndex: 2
+      NetworkInterfaceId: !Ref PLCTIAInstanceEth2
+      InstanceId: !Ref PLCTIAInstance
+    DependsOn: PLCTIAInstance
+
+  PLCTIAInstanceEth3:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      PrivateIpAddresses:
+        - PrivateIpAddress: 10.0.1.203
+          Primary: true
+        - PrivateIpAddress: 10.0.1.103
+          Primary: false
+      GroupSet:
+      - !GetAtt VPC.DefaultSecurityGroup
+      - !Ref SecurityGroup
+
+      Tags:
+      - Key: Name
+        Value: 'eth3 for PLCSim'
+
+  PLCTIAInstanceEth3Attachment:
+    Type: 'AWS::EC2::NetworkInterfaceAttachment'
+    Properties:
+      DeleteOnTermination: true
+      DeviceIndex: 3
+      NetworkInterfaceId: !Ref PLCTIAInstanceEth3
+      InstanceId: !Ref PLCTIAInstance
+    DependsOn: PLCTIAInstance
+
+  PLCTIAInstanceEth4:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      PrivateIpAddresses:
+        - PrivateIpAddress: 10.0.1.204
+          Primary: true
+        - PrivateIpAddress: 10.0.1.104
+          Primary: false
+      GroupSet:
+      - !GetAtt VPC.DefaultSecurityGroup
+      - !Ref SecurityGroup
+
+      Tags:
+      - Key: Name
+        Value: 'eth4 for PLCSim'
+
+  PLCTIAInstanceEth4Attachment:
+    Type: 'AWS::EC2::NetworkInterfaceAttachment'
+    Properties:
+      DeleteOnTermination: true
+      DeviceIndex: 4
+      NetworkInterfaceId: !Ref PLCTIAInstanceEth4
+      InstanceId: !Ref PLCTIAInstance
+    DependsOn: PLCTIAInstance
+
+  PLCTIAInstanceEth5:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      PrivateIpAddresses:
+        - PrivateIpAddress: 10.0.1.205
+          Primary: true
+        - PrivateIpAddress: 10.0.1.105
+          Primary: false
+      GroupSet:
+      - !GetAtt VPC.DefaultSecurityGroup
+      - !Ref SecurityGroup
+
+      Tags:
+      - Key: Name
+        Value: 'eth5 for PLCSim'
+
+  PLCTIAInstanceEth5Attachment:
+    Type: 'AWS::EC2::NetworkInterfaceAttachment'
+    Properties:
+      DeleteOnTermination: true
+      DeviceIndex: 5
+      NetworkInterfaceId: !Ref PLCTIAInstanceEth5
+      InstanceId: !Ref PLCTIAInstance
+    DependsOn: PLCTIAInstance
+
+  EC2SSMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2SSMRole
+
+  EC2SSMRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: IAM roles permissions to be able to use existing bucket in the customer account.
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                # TODO: scope down all that...
+                  - 'kms:Decrypt'
+#                  - 's3:*'
+#                  - 'iotsitewise:*'
+#                  - 'iot:*'
+#                  - 'iam:*'
+#                  - 'greengrass:*'
+                  - 'iottwinmaker:GetMetadataTransferJob'
+                  - 'iottwinmaker:CreateMetadataTransferJob'
+                Resource: '*'
+              - Sid: PassRolePermission
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
+        - PolicyName: SecretsManager
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - secretsmanager:*SecretValue
+                  - secretsmanager:UpdateSecretVersionStage
+                  - secretsmanager:DescribeSecret
+                Effect: Allow
+                Resource: !Ref LocalAdminPassword
+              - Action: secretsmanager:GetRandomPassword
+                Effect: Allow
+                Resource: '*'
+      # TODO add policies needed to load data from S3 and boot the PLCSIm (EC2 read for listing nics)
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSIoTSiteWiseFullAccess
+        - arn:aws:iam::aws:policy/AWSIoTDataAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+
+Outputs:
+  01WindowsPasswordSecret:
+    Description: 'The console URL for the created Secrets Manager Secret that stores the password for the windos instance'
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/secretsmanager/home?region=${AWS::Region}#/secret?name=${LocalAdminPassword}'
+    Condition: GeneratePassword
+  02WindowsInstanceRDPSSM:
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !Ref "AWS::Region"
+        - '.console.aws.amazon.com/systems-manager/fleet-manager/remote-desktop?region='
+        - !Ref "AWS::Region"
+        - '&nodeIds='
+        - !Ref PLCTIAInstance
+    Description: SSM RDP Session for WindowsInstance (PLCSim + TIA Portal)
+  03WindowsInstanceIdConsoleUrl:
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !Ref "AWS::Region"
+        - '.console.aws.amazon.com/ec2/home?region='
+        - !Ref "AWS::Region"
+        - '#InstanceDetails:instanceId='
+        - !Ref PLCTIAInstance
+    Description: AWS Console URL for WindowsInstance (PLCSim + TIA Portal)
+
+# TODO: SFC/Greengrass Linux Instance helper outputs
+
+#  04LinuxInstanceIdConsoleUrl:
+#    Value: !Join
+#      - ''
+#      - - 'https://'
+#        - !Ref "AWS::Region"
+#        - '.console.aws.amazon.com/ec2/home?region='
+#        - !Ref "AWS::Region"
+#        - '#InstanceDetails:instanceId='
+#        - !Ref SFCInstance
+#    Description: AWS Console URL for LinuxInstance (SFC & Greengrass)
+
+  05SecurityGroupConsoleUrl:
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !Ref "AWS::Region"
+        - '.console.aws.amazon.com/ec2/home?region='
+        - !Ref "AWS::Region"
+        - '#SecurityGroup:groupId='
+        - !Ref SecurityGroup
+    Description: AWS Console URL for EC2 Security Group in use
+
+# TODO: Greengrass Console helper outputs
+
+#  06GreengrassCreateConsoleUrl:
+#    Value: !Join
+#      - ''
+#      - - 'https://'
+#        - !Ref "AWS::Region"
+#        - '.console.aws.amazon.com/iot/home?region='
+#        - !Ref "AWS::Region"
+#        - '#/greengrass/v2/cores/create'
+#    Description: AWS Console URL for for Greengrass Core Device creation

@@ -1,0 +1,774 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IoTSiteWise",
+  "description": "Metadata transfer job resource schema for IoTSiteWise",
+  "definitions": {
+    "Name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "[^\\u0000-\\u001F\\u007F]+"
+    },
+    "Description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "[^\\u0000-\\u001F\\u007F]+"
+    },
+    "ID": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "ExternalId": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 128,
+      "pattern": "[a-zA-Z0-9_][a-zA-Z_\\-0-9.:]*[a-zA-Z0-9_]+"
+    },
+    "AttributeValue": {
+      "description": "The value of the property attribute.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "[^\\u0000-\\u001F\\u007F]+"
+    },
+    "PropertyUnit": {
+      "description": "The unit of measure (such as Newtons or RPM) of the asset property.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "[^\\u0000-\\u001F\\u007F]+"
+    },
+    "PropertyAlias": {
+      "description": "The property alias that identifies the property.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "[^\\u0000-\\u001F\\u007F]+"
+    },
+    "AssetProperty": {
+      "description": "The asset property's definition, alias, unit, and notification state.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "id"
+          ]
+        },
+        {
+          "required": [
+            "externalId"
+          ]
+        }
+      ],
+      "properties": {
+        "id": {
+          "description": "The ID of the asset property.",
+          "$ref": "#/definitions/ID"
+        },
+        "externalId": {
+          "description": "The ExternalID of the asset property.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "alias": {
+          "$ref": "#/definitions/PropertyAlias"
+        },
+        "unit": {
+          "$ref": "#/definitions/PropertyUnit"
+        },
+        "attributeValue": {
+          "$ref": "#/definitions/AttributeValue"
+        },
+        "retainDataOnAliasChange": {
+          "type": "string",
+          "default": "TRUE",
+          "enum": [
+            "TRUE",
+            "FALSE"
+          ]
+        },
+        "propertyNotificationState": {
+          "description": "The MQTT notification state (ENABLED or DISABLED) for this asset property.",
+          "type": "string",
+          "enum": [
+            "ENABLED",
+            "DISABLED"
+          ]
+        }
+      }
+    },
+    "AssetHierarchy": {
+      "description": "A hierarchy specifies allowed parent/child asset relationships.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "id",
+            "childAssetId"
+          ]
+        },
+        {
+          "required": [
+            "externalId",
+            "childAssetId"
+          ]
+        },
+        {
+          "required": [
+            "id",
+            "childAssetExternalId"
+          ]
+        },
+        {
+          "required": [
+            "externalId",
+            "childAssetExternalId"
+          ]
+        }
+      ],
+      "properties": {
+        "id": {
+          "description": "The ID of a hierarchy in the parent asset's model.",
+          "$ref": "#/definitions/ID"
+        },
+        "externalId": {
+          "description": "The ExternalID of a hierarchy in the parent asset's model.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "childAssetId": {
+          "description": "The ID of the child asset to be associated.",
+          "$ref": "#/definitions/ID"
+        },
+        "childAssetExternalId": {
+          "description": "The ExternalID of the child asset to be associated.",
+          "$ref": "#/definitions/ExternalId"
+        }
+      }
+    },
+    "Tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "AssetModelType": {
+      "type": "string",
+      "default": null,
+      "enum": [
+        "ASSET_MODEL",
+        "COMPONENT_MODEL"
+      ]
+    },
+    "AssetModelCompositeModel": {
+      "description": "Contains a composite model definition in an asset model. This composite model definition is applied to all assets created from the asset model.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "id"
+          ]
+        },
+        {
+          "required": [
+            "externalId"
+          ]
+        }
+      ],
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "The ID of the asset model composite model.",
+          "$ref": "#/definitions/ID"
+        },
+        "externalId": {
+          "description": "The ExternalID of the asset model composite model.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "parentId": {
+          "description": "The ID of the parent asset model composite model.",
+          "$ref": "#/definitions/ID"
+        },
+        "parentExternalId": {
+          "description": "The ExternalID of the parent asset model composite model.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "composedAssetModelId": {
+          "description": "The ID of the composed asset model.",
+          "$ref": "#/definitions/ID"
+        },
+        "composedAssetModelExternalId": {
+          "description": "The ExternalID of the composed asset model.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "description": {
+          "description": "A description for the asset composite model.",
+          "$ref": "#/definitions/Description"
+        },
+        "name": {
+          "description": "A unique, friendly name for the asset composite model.",
+          "$ref": "#/definitions/Name"
+        },
+        "type": {
+          "description": "The type of the composite model. For alarm composite models, this type is AWS/ALARM.",
+          "$ref": "#/definitions/Name"
+        },
+        "properties": {
+          "description": "The property definitions of the asset model.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssetModelProperty"
+          }
+        }
+      }
+    },
+    "AssetModelProperty": {
+      "description": "Contains information about an asset model property.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "id"
+          ]
+        },
+        {
+          "required": [
+            "externalId"
+          ]
+        }
+      ],
+      "required": [
+        "name",
+        "dataType",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "The ID of the asset model property.",
+          "$ref": "#/definitions/ID"
+        },
+        "externalId": {
+          "description": "The ExternalID of the asset model property.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "name": {
+          "description": "The name of the asset model property.",
+          "$ref": "#/definitions/Name"
+        },
+        "dataType": {
+          "description": "The data type of the asset model property.",
+          "$ref": "#/definitions/DataType"
+        },
+        "dataTypeSpec": {
+          "description": "The data type of the structure for this property.",
+          "$ref": "#/definitions/Name"
+        },
+        "unit": {
+          "description": "The unit of the asset model property, such as Newtons or RPM.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "[^\\u0000-\\u001F\\u007F]+"
+        },
+        "type": {
+          "description": "The property type",
+          "$ref": "#/definitions/PropertyType"
+        }
+      }
+    },
+    "DataType": {
+      "type": "string",
+      "enum": [
+        "STRING",
+        "INTEGER",
+        "DOUBLE",
+        "BOOLEAN",
+        "STRUCT"
+      ]
+    },
+    "PropertyType": {
+      "description": "Contains a property type, which can be one of attribute, measurement, metric, or transform.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "$ref": "#/definitions/Attribute"
+        },
+        "transform": {
+          "$ref": "#/definitions/Transform"
+        },
+        "metric": {
+          "$ref": "#/definitions/Metric"
+        },
+        "measurement": {
+          "$ref": "#/definitions/Measurement"
+        }
+      }
+    },
+    "Attribute": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultValue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "[^\\u0000-\\u001F\\u007F]+"
+        }
+      }
+    },
+    "Transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expression",
+        "variables"
+      ],
+      "properties": {
+        "expression": {
+          "description": "The mathematical expression that defines the transformation function.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "variables": {
+          "description": "The list of variables used in the expression.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExpressionVariable"
+          }
+        },
+        "processingConfig": {
+          "$ref": "#/definitions/TransformProcessingConfig"
+        }
+      }
+    },
+    "TransformProcessingConfig": {
+      "description": "The processing configuration for the given transform property.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "computeLocation"
+      ],
+      "properties": {
+        "computeLocation": {
+          "description": "The compute location for the given transform property.",
+          "$ref": "#/definitions/ComputeLocation"
+        },
+        "forwardingConfig": {
+          "description": "The forwarding configuration for a given property.",
+          "$ref": "#/definitions/ForwardingConfig"
+        }
+      }
+    },
+    "Metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expression",
+        "variables",
+        "window"
+      ],
+      "properties": {
+        "expression": {
+          "description": "The mathematical expression that defines the metric aggregation function.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "variables": {
+          "description": "The list of variables used in the expression.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExpressionVariable"
+          }
+        },
+        "window": {
+          "description": "The window (time interval) over which AWS IoT SiteWise computes the metric's aggregation expression",
+          "$ref": "#/definitions/MetricWindow"
+        },
+        "processingConfig": {
+          "$ref": "#/definitions/MetricProcessingConfig"
+        }
+      }
+    },
+    "MetricProcessingConfig": {
+      "description": "The processing configuration for the metric.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "computeLocation"
+      ],
+      "properties": {
+        "computeLocation": {
+          "description": "The compute location for the given metric property.",
+          "$ref": "#/definitions/ComputeLocation"
+        }
+      }
+    },
+    "ComputeLocation": {
+      "type": "string",
+      "enum": [
+        "EDGE",
+        "CLOUD"
+      ]
+    },
+    "ForwardingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "ENABLED",
+            "DISABLED"
+          ]
+        }
+      }
+    },
+    "MetricWindow": {
+      "description": "Contains a time interval window used for data aggregate computations (for example, average, sum, count, and so on).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tumbling": {
+          "description": "The tumbling time interval window.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "interval"
+          ],
+          "properties": {
+            "interval": {
+              "description": "The time interval for the tumbling window.",
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 23
+            },
+            "offset": {
+              "description": "The offset for the tumbling window.",
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 25
+            }
+          }
+        }
+      }
+    },
+    "ExpressionVariable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "description": "The friendly name of the variable to be used in the expression.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "value": {
+          "description": "The variable that identifies an asset property from which to use values.",
+          "$ref": "#/definitions/VariableValue"
+        }
+      }
+    },
+    "VariableValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "propertyId"
+          ]
+        },
+        {
+          "required": [
+            "propertyExternalId"
+          ]
+        }
+      ],
+      "properties": {
+        "propertyId": {
+          "$ref": "#/definitions/ID"
+        },
+        "propertyExternalId": {
+          "$ref": "#/definitions/ExternalId"
+        },
+        "hierarchyId": {
+          "$ref": "#/definitions/ID"
+        },
+        "hierarchyExternalId": {
+          "$ref": "#/definitions/ExternalId"
+        }
+      }
+    },
+    "Measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "processingConfig": {
+          "$ref": "#/definitions/MeasurementProcessingConfig"
+        }
+      }
+    },
+    "MeasurementProcessingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "forwardingConfig"
+      ],
+      "properties": {
+        "forwardingConfig": {
+          "description": "The forwarding configuration for the given measurement property.",
+          "$ref": "#/definitions/ForwardingConfig"
+        }
+      }
+    },
+    "AssetModelHierarchy": {
+      "description": "Contains information about an asset model hierarchy.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "id",
+            "childAssetModelId"
+          ]
+        },
+        {
+          "required": [
+            "id",
+            "childAssetModelExternalId"
+          ]
+        },
+        {
+          "required": [
+            "externalId",
+            "childAssetModelId"
+          ]
+        },
+        {
+          "required": [
+            "externalId",
+            "childAssetModelExternalId"
+          ]
+        }
+      ],
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "description": "The ID of the asset model hierarchy.",
+          "$ref": "#/definitions/ID"
+        },
+        "externalId": {
+          "description": "The ExternalID of the asset model hierarchy.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "name": {
+          "description": "The name of the asset model hierarchy.",
+          "$ref": "#/definitions/Name"
+        },
+        "childAssetModelId": {
+          "description": "The ID of the asset model. All assets in this hierarchy must be instances of the child AssetModelId asset model.",
+          "$ref": "#/definitions/ID"
+        },
+        "childAssetModelExternalId": {
+          "description": "The ExternalID of the asset model. All assets in this hierarchy must be instances of the child AssetModelId asset model.",
+          "$ref": "#/definitions/ExternalId"
+        }
+      }
+    },
+    "AssetModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "assetModelId"
+          ]
+        },
+        {
+          "required": [
+            "assetModelExternalId"
+          ]
+        }
+      ],
+      "required": [
+        "assetModelName"
+      ],
+      "properties": {
+        "assetModelId": {
+          "description": "The ID of the asset model.",
+          "$ref": "#/definitions/ID"
+        },
+        "assetModelExternalId": {
+          "description": "The ID of the asset model.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "assetModelName": {
+          "description": "A unique, friendly name for the asset model.",
+          "$ref": "#/definitions/Name"
+        },
+        "assetModelDescription": {
+          "description": "A description for the asset model.",
+          "$ref": "#/definitions/Description"
+        },
+        "assetModelType": {
+          "description": "The type of the asset model.",
+          "$ref": "#/definitions/AssetModelType"
+        },
+        "assetModelProperties": {
+          "description": "The property definitions of the asset model.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssetModelProperty"
+          }
+        },
+        "assetModelCompositeModels": {
+          "description": "The composite asset models that are part of this asset model. Composite asset models are asset models that contain specific properties.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssetModelCompositeModel"
+          }
+        },
+        "assetModelHierarchies": {
+          "description": "The hierarchy definitions of the asset model. Each hierarchy specifies an asset model whose assets can be children of any other assets created from this asset model.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssetModelHierarchy"
+          }
+        },
+        "tags": {
+          "description": "A list of key-value pairs that contain metadata for the asset model.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Tag"
+          }
+        }
+      }
+    },
+    "Asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "assetId",
+            "assetModelId"
+          ]
+        },
+        {
+          "required": [
+            "assetExternalId",
+            "assetModelId"
+          ]
+        },
+        {
+          "required": [
+            "assetId",
+            "assetModelExternalId"
+          ]
+        },
+        {
+          "required": [
+            "assetExternalId",
+            "assetModelExternalId"
+          ]
+        }
+      ],
+      "required": [
+        "assetName"
+      ],
+      "properties": {
+        "assetId": {
+          "description": "The ID of the asset",
+          "$ref": "#/definitions/ID"
+        },
+        "assetExternalId": {
+          "description": "The external ID of the asset",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "assetModelId": {
+          "description": "The ID of the asset model from which to create the asset.",
+          "$ref": "#/definitions/ID"
+        },
+        "assetModelExternalId": {
+          "description": "The ExternalID of the asset model from which to create the asset.",
+          "$ref": "#/definitions/ExternalId"
+        },
+        "assetName": {
+          "description": "A unique, friendly name for the asset.",
+          "$ref": "#/definitions/Name"
+        },
+        "assetDescription": {
+          "description": "A description for the asset",
+          "$ref": "#/definitions/Description"
+        },
+        "assetProperties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssetProperty"
+          }
+        },
+        "assetHierarchies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssetHierarchy"
+          }
+        },
+        "tags": {
+          "description": "A list of key-value pairs that contain metadata for the asset.",
+          "type": "array",
+          "uniqueItems": false,
+          "items": {
+            "$ref": "#/definitions/Tag"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assetModels": {
+      "type": "array",
+      "uniqueItems": false,
+      "items": {
+        "$ref": "#/definitions/AssetModel"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "uniqueItems": false,
+      "items": {
+        "$ref": "#/definitions/Asset"
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+    "S7-Adapter-Controller-Block": {
+        "Address": "%ipAddress%",
+        "ControllerType": "%controllerType%"
+    },
+    "DebugTarget-Block": {
+        "Active": true,
+        "LogLevel": "%logLevel%",
+        "TargetType": "DEBUG-TARGET"
+    },
+    "SitewiseTarget-Block-AutoAssetCreate": {
+        "Active": true,
+        "TargetType": "AWS-SITEWISE",
+        "Region": "%region%",
+        "AssetCreation": "$(AssetCreationBlock)"
+    },
+    "SitewiseTarget-Block-UsingCredProvider": {
+        "Active": true,
+        "TargetType": "AWS-SITEWISE",
+        "Region": "%region%",
+        "CredentialProviderClient": "%credProviderName%",
+        "Assets": "%mappedAssets%"
+    },
+    "SitewiseTarget-Block-NoCredProvider": {
+        "Active": true,
+        "TargetType": "AWS-SITEWISE",
+        "Region": "%region%",
+        "Assets": "%mappedAssets%"
+    },
+    "AssetCreationBlock": {
+        "AssetModelName": "%source%_model",
+        "AssetName": "%source%",
+        "AssetPropertyName": "%channel%",
+        "AssetPropertyTimestamp": "Channel"
+    },
+    "AwsIotClient-Block": {
+        "IotCredentialEndpoint": "%endpoint%",
+        "RoleAlias": "%rolealias%",
+        "ThingName": "%thingname%",
+        "Certificate": "%certificatefilepath%",
+        "PrivateKey": "%keyfilepath%",
+        "RootCa": "rootcafilepath",
+        "GreenGrassDeploymentPath": "%greengrasspath%"
+    }
+}

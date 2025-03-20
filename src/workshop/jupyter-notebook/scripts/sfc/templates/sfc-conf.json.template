@@ -1,0 +1,32 @@
+{
+    "AWSVersion": "2022-04-02",
+    "Name": "S7 to Sitewise",
+    "Version": 1,
+    "LogLevel": "Info",
+    "Templates": "@file:include_mainTemplates.json",
+    "Schedules": [
+        {
+            "Name": "MainSchedule",
+            "Interval": 500,
+            "Description": "Read S7 values from S7-1500 PLC, send to Sitewise API",
+            "Active": true,
+            "TimestampLevel": "Both",
+            "Sources": {},
+            "Targets": [
+                "#DebugTarget",
+                "SitewiseTarget"
+            ]
+        }
+    ],
+    "Sources": {},
+    "Targets": {},
+    "AdapterTypes": "@file:include_types.json@Adapters",
+    "TargetTypes": "@file:include_types.json@Targets",
+    "ProtocolAdapters": {
+        "S7FleetPLCSim": {
+            "AdapterType": "S7",
+            "Controllers": {}
+        }
+    },
+    "AwsIotCredentialProviderClients": {}
+}
