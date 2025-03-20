@@ -17,9 +17,9 @@ This project uses foundation models from Amazon Bedrock. You'll need to enable a
 
 - **Claude 3 models**: Haiku 
 
-<div class="alert alert-block alert-info">
-<span style="font-size: 1.5em;">⚠️</span> If you do not have access to these models, the application will work, but you can to select the model you have access to in the Jupyter NB. See [Model access documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) to enable model access in your AWS account.
-</div>
+
+If you do not have access to these models, the application will work, but you can to select the model you have access to in the Jupyter NB. See [Model access documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) to enable model access in your AWS account.
+
   
 ## Solution Architecture
 
@@ -57,9 +57,8 @@ Alternatively, You can also access this instance using your own local RDP client
 
 6. Execute these scripts located in your desktop - `start_plcs.bat` and `start_tia.bat`. These will automatically start up Siemens TIA portal and load simulated PLCs with code.
 
-<div class="alert alert-block alert-info">
-<span style="font-size: 1.5em;">⚠️</span> Make sure the licenses are added into the program `Automation License Manager`. Please trigger any action (e.g. create a new FB, etc.) in TIA Portal to manually add the licenses in case they are missing.
-</div>
+Make sure the licenses are added into the program `Automation License Manager`. Please trigger any action (e.g. create a new FB, etc.) in TIA Portal to manually add the licenses in case they are missing.
+
 
 ## Run the workshop
 
