@@ -8,7 +8,7 @@ implement bulk asset imports, set up Shop Floor Connectivity (SFC) for data coll
 
 ## Pre-requisites
 
-1. An account for Siemens [SiePortal] (https://sieportal.siemens.com/en-us/home) in oder to download the required software.
+1. An account for Siemens [SiePortal](https://sieportal.siemens.com/en-us/home) in oder to download the required software.
 2. AWS account. If you don't have an AWS Account follow the [instructions](https://repost.aws/knowledge-center/create-and-activate-aws-account) to create one
 
 ### Model Access
@@ -43,7 +43,7 @@ This repository contains the following:
 1. Deploy the CloudFormation template in your AWS account using the console or the command below. This deployment could take 15-20 mins. 
    
 ```bash
-    aws cloudformation deploy --template-file src/cfn/uns-scale-connectivity-workshop.yaml --stack-name src/cfn/uns-scale-connectivity-workshop --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file src/cfn/uns-scale-connectivity-workshop.yaml --stack-name src/cfn/uns-scale-connectivity-workshop --capabilities CAPABILITY_NAMED_IAM
 ```
 2. Go to the `Outputs` section of the of the CloudFormation Console and select `02WindowsInstanceRDPSSM` to use AWS Systems Fleet Manager to access your Amazon EC2 instance. 
 
